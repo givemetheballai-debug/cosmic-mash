@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic MASH ✨ - Your Fortune-Telling Game Powered by the Universe</title>
+    <meta name="description" content="Spin the cosmic wheel and reveal your personalized fortune based on zodiac energy. Get your dream house, career, vacation, and insights on what it means for your life.">
+    <meta name="keywords" content="fortune telling, MASH game, astrology, zodiac, cosmic fortune, personality quiz">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 0.3s linear infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .animate-bounce {
+            animation: bounce 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .animation-delay-200 { animation-delay: 0.2s; }
+        .animation-delay-400 { animation-delay: 0.4s; }
+        .animation-delay-600 { animation-delay: 0.6s; }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        .delay-100 { animation-delay: 0.1s; opacity: 0; }
+        .delay-200 { animation-delay: 0.2s; opacity: 0; }
+        .delay-300 { animation-delay: 0.3s; opacity: 0; }
+        .delay-400 { animation-delay: 0.4s; opacity: 0; }
+        .delay-500 { animation-delay: 0.5s; opacity: 0; }
+        .delay-600 { animation-delay: 0.6s; opacity: 0; }
+        
+        @keyframes shimmer {
+            0% { background-position: -100% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255,255,255,0.3) 50%, 
+                transparent 100%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes glow-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.5); }
+        }
+        .glow-pulse {
+            animation: glow-pulse 2s infinite;
+        }
+        
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: sparkle-float 2s infinite;
+        }
+        @keyframes sparkle-float {
+            0% { transform: translateY(0) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            50% { transform: translateY(-100px) scale(1); opacity: 1; }
+            100% { transform: translateY(-200px) scale(0); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Icon components
+        const Sparkles = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+        );
+
+        const Star = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+        );
+
+        const Moon = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+        );
+
+        const Sun = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+        );
+
+        // Zodiac calculation
+        const getZodiacSign = (month, day) => {
+            const dates = [
+                { sign: 'Capricorn', start: [12, 22], end: [1, 19], element: 'earth' },
+                { sign: 'Aquarius', start: [1, 20], end: [2, 18], element: 'air' },
+                { sign: 'Pisces', start: [2, 19], end: [3, 20], element: 'water' },
+                { sign: 'Aries', start: [3, 21], end: [4, 19], element: 'fire' },
+                { sign: 'Taurus', start: [4, 20], end: [5, 20], element: 'earth' },
+                { sign: 'Gemini', start: [5, 21], end: [6, 20], element: 'air' },
+                { sign: 'Cancer', start: [6, 21], end: [7, 22], element: 'water' },
+                { sign: 'Leo', start: [7, 23], end: [8, 22], element: 'fire' },
+                { sign: 'Virgo', start: [8, 23], end: [9, 22], element: 'earth' },
+                { sign: 'Libra', start: [9, 23], end: [10, 22], element: 'air' },
+                { sign: 'Scorpio', start: [10, 23], end: [11, 21], element: 'water' },
+                { sign: 'Sagittarius', start: [11, 22], end: [12, 21], element: 'fire' }
+            ];
+
+            for (let zodiac of dates) {
+                const [startMonth, startDay] = zodiac.start;
+                const [endMonth, endDay] = zodiac.end;
+                
+                if ((month === startMonth && day >= startDay) || 
+                    (month === endMonth && day <= endDay)) {
+                    return zodiac;
+                }
+            }
+            return dates[0];
+        };
+
+        // Color schemes by element
+        const colorSchemes = {
+            fire: {
+                gradient: 'from-red-900 via-orange-900 to-yellow-900',
+                card: 'from-red-800/50 to-orange-800/50',
+                border: 'border-orange-400/30',
+                accent: 'text-yellow-300',
+                button: 'from-orange-500 to-red-500'
+            },
+            earth: {
+                gradient: 'from-green-900 via-emerald-900 to-teal-900',
+                card: 'from-green-800/50 to-emerald-800/50',
+                border: 'border-emerald-400/30',
+                accent: 'text-emerald-300',
+                button: 'from-emerald-500 to-green-500'
+            },
+            air: {
+                gradient: 'from-blue-900 via-indigo-900 to-purple-900',
+                card: 'from-blue-800/50 to-indigo-800/50',
+                border: 'border-blue-400/30',
+                accent: 'text-blue-300',
+                button: 'from-blue-500 to-indigo-500'
+            },
+            water: {
+                gradient: 'from-cyan-900 via-teal-900 to-blue-900',
+                card: 'from-cyan-800/50 to-teal-800/50',
+                border: 'border-cyan-400/30',
+                accent: 'text-cyan-300',
+                button: 'from-cyan-500 to-teal-500'
+            },
+            default: {
+                gradient: 'from-purple-900 via-pink-900 to-indigo-900',
+                card: 'from-purple-800/50 to-pink-800/50',
+                border: 'border-purple-400/30',
+                accent: 'text-yellow-300',
+                button: 'from-pink-500 to-purple-500'
+            }
+        };
+
+        // Fortune data with tags (keeping abbreviated version for file size)
+        const FORTUNE_DATA = {
+            houses: [
+                { name: 'Cliffside Villa', location: 'Malibu, CA', price: '$3.2M', desc: 'Ocean views that stop time', tags: ['high-luxury', 'nature', 'private', 'modern'] },
+                { name: 'Mountain Chalet', location: 'Aspen, CO', price: '$2.8M', desc: 'Where snow meets luxury', tags: ['high-luxury', 'nature', 'private', 'modern'] },
+                { name: 'Desert Oasis', location: 'Scottsdale, AZ', price: '$1.9M', desc: 'Sunset colors built into walls', tags: ['mid-luxury', 'nature', 'private', 'modern'] },
+                { name: 'Urban Penthouse', location: 'Manhattan, NY', price: '$5.5M', desc: 'City lights as your nightlight', tags: ['high-luxury', 'urban', 'social', 'modern'] },
+                { name: 'Treehouse Mansion', location: 'Portland, OR', price: '$1.2M', desc: 'Childhood dreams, adult budget', tags: ['mid-luxury', 'nature', 'private', 'quirky'] },
+                { name: 'Beach Bungalow', location: 'Outer Banks, NC', price: '$850K', desc: 'Salt air and sunrise coffee', tags: ['modest', 'nature', 'private', 'quirky'] },
+                { name: 'Converted Lighthouse', location: 'Maine Coast', price: '$1.1M', desc: 'Your own personal beacon', tags: ['mid-luxury', 'remote', 'private', 'quirky'] },
+                { name: 'Houseboat', location: 'Seattle, WA', price: '$680K', desc: 'Home that floats with the tides', tags: ['modest', 'urban', 'private', 'quirky'] },
+                { name: 'Glass Box Modern', location: 'Los Angeles, CA', price: '$4.8M', desc: 'Walls that disappear into views', tags: ['high-luxury', 'urban', 'social', 'modern'] },
+                { name: 'Victorian Mansion', location: 'San Francisco, CA', price: '$3.9M', desc: 'Crown molding and character', tags: ['high-luxury', 'urban', 'social', 'historic'] },
+                { name: 'Cabin with Hot Tub', location: 'Blue Ridge Mountains', price: '$475K', desc: 'Stargazing from the deck', tags: ['modest', 'nature', 'private', 'quirky'] },
+                { name: 'Loft in Converted Factory', location: 'Brooklyn, NY', price: '$2.1M', desc: 'Exposed brick, high ceilings', tags: ['mid-luxury', 'urban', 'social', 'quirky'] },
+                { name: 'Mediterranean Villa', location: 'Miami Beach, FL', price: '$6.2M', desc: 'Palm trees and infinity pools', tags: ['high-luxury', 'nature', 'social', 'modern'] },
+                { name: 'Ski Chalet', location: 'Park City, UT', price: '$2.6M', desc: 'Ski-in, ski-out luxury', tags: ['high-luxury', 'nature', 'social', 'modern'] },
+                { name: 'Modern A-Frame', location: 'Colorado Rockies', price: '$925K', desc: 'Instagram-worthy geometry', tags: ['mid-luxury', 'nature', 'private', 'modern'] },
+                { name: 'Beachfront Estate', location: 'Maui, HI', price: '$8.5M', desc: 'Waves as your soundtrack', tags: ['high-luxury', 'nature', 'private', 'modern'] },
+                { name: 'Geodesic Dome', location: 'Joshua Tree, CA', price: '$580K', desc: 'Desert views through every window', tags: ['modest', 'remote', 'private', 'quirky'] },
+                { name: 'Converted Church', location: 'Charleston, SC', price: '$1.3M', desc: 'Stained glass and sacred spaces', tags: ['mid-luxury', 'urban', 'private', 'quirky'] },
+                { name: 'Floating Home', location: 'Portland (Amsterdam-style)', price: '$750K', desc: 'Dutch vibes, PDX location', tags: ['modest', 'urban', 'private', 'quirky'] },
+                { name: 'Cliff House', location: 'Big Sur, CA', price: '$7.3M', desc: 'Edge of the world energy', tags: ['high-luxury', 'remote', 'private', 'modern'] },
+                { name: 'Tiny Home Village Estate', location: 'Asheville, NC', price: '$420K', desc: 'Intentionally small, hugely cool', tags: ['modest', 'nature', 'private', 'quirky'] },
+                { name: 'Container Home Compound', location: 'Marfa, TX', price: '$385K', desc: 'Desert modernism', tags: ['modest', 'remote', 'private', 'modern'] },
+                { name: 'Estate with Observatory', location: 'Sedona, AZ', price: '$4.4M', desc: 'Your own telescope tower', tags: ['high-luxury', 'nature', 'private', 'quirky'] },
+                { name: 'Yurt Compound', location: 'Big Sur, CA', price: '$425K', desc: 'Glamping meets permanent', tags: ['modest', 'remote', 'private', 'quirky'] },
+                { name: 'Actual Castle', location: 'Scotland', price: '$12M', desc: 'Live your medieval fantasy', tags: ['high-luxury', 'remote', 'private', 'historic'] },
+                { name: 'Converted Water Tower', location: 'Brooklyn, NY', price: '$890K', desc: 'Round rooms, tall stories', tags: ['modest', 'urban', 'private', 'quirky'] },
+                { name: 'Underground Earth Home', location: 'New Mexico', price: '$675K', desc: 'Hobbit vibes, desert edition', tags: ['modest', 'remote', 'private', 'quirky'] }
+            ],
+            jobs: [
+                { name: 'Professional Stargazer', tags: ['creative', 'independent', 'risky', 'adventurous'] },
+                { name: 'Ice Cream Flavor Inventor', tags: ['creative', 'collaborative', 'stable', 'grounded'] },
+                { name: 'Travel Show Host', tags: ['creative', 'independent', 'risky', 'adventurous'] },
+                { name: 'Museum Curator', tags: ['analytical', 'collaborative', 'stable', 'grounded'] },
+                { name: 'Video Game Designer', tags: ['creative', 'collaborative', 'stable', 'grounded'] },
+                { name: 'Bookstore Owner', tags: ['creative', 'independent', 'stable', 'grounded'] },
+                { name: 'Wildlife Photographer', tags: ['creative', 'independent', 'risky', 'adventurous'] },
+                { name: 'Chocolate Sommelier', tags: ['creative', 'independent', 'stable', 'grounded'] },
+                { name: 'Film Location Scout', tags: ['creative', 'independent', 'stable', 'adventurous'] },
+                { name: 'Surf Instructor', tags: ['service', 'independent', 'risky', 'adventurous'] },
+                { name: 'National Park Ranger', tags: ['service', 'collaborative', 'stable', 'adventurous'] },
+                { name: 'Podcast Producer', tags: ['creative', 'collaborative', 'stable', 'grounded'] },
+                { name: 'Food Critic', tags: ['creative', 'independent', 'stable', 'grounded'] },
+                { name: 'Concert Venue Owner', tags: ['creative', 'collaborative', 'risky', 'grounded'] },
+                { name: 'Yacht Designer', tags: ['creative', 'collaborative', 'stable', 'adventurous'] },
+                { name: 'Travel Writer', tags: ['creative', 'independent', 'risky', 'adventurous'] },
+                { name: 'Craft Brewery Founder', tags: ['creative', 'collaborative', 'risky', 'grounded'] },
+                { name: 'Art Gallery Owner', tags: ['creative', 'independent', 'stable', 'grounded'] },
+                { name: 'Festival Organizer', tags: ['creative', 'collaborative', 'risky', 'adventurous'] },
+                { name: 'Perfume Creator', tags: ['creative', 'independent', 'stable', 'grounded'] },
+                { name: 'Wine Vineyard Owner', tags: ['creative', 'independent', 'risky', 'grounded'] },
+                { name: 'Architectural Photographer', tags: ['creative', 'independent', 'stable', 'grounded'] },
+                { name: 'Coffee Shop Owner (third wave)', tags: ['creative', 'collaborative', 'stable', 'grounded'] },
+                { name: 'Documentary Filmmaker', tags: ['creative', 'collaborative', 'risky', 'adventurous'] },
+                { name: 'Adventure Guide in Iceland', tags: ['service', 'independent', 'risky', 'adventurous'] },
+                { name: 'Boutique Hotel Owner', tags: ['creative', 'collaborative', 'risky', 'grounded'] },
+                { name: 'Professional Mermaid', tags: ['creative', 'independent', 'risky', 'adventurous'] },
+                { name: 'Fortune Cookie Writer', tags: ['creative', 'independent', 'stable', 'grounded'] }
+            ],
+            cars: [
+                { name: 'Vintage Mustang (candy apple red)', tags: ['flashy', 'vintage', 'city', 'classic'] },
+                { name: 'Tesla Model X (falcon doors)', tags: ['practical', 'electric', 'family', 'modern'] },
+                { name: 'Restored VW Bus (named Sunshine)', tags: ['quirky', 'vintage', 'adventure', 'classic'] },
+                { name: 'Porsche 911 (midnight blue)', tags: ['flashy', 'gas', 'city', 'classic'] },
+                { name: 'Rivian Electric Truck (adventure ready)', tags: ['practical', 'electric', 'adventure', 'modern'] },
+                { name: 'Classic Bronco (desert tan)', tags: ['practical', 'vintage', 'adventure', 'classic'] },
+                { name: 'Vintage Land Rover Defender (forest green)', tags: ['practical', 'vintage', 'adventure', 'classic'] },
+                { name: 'Mercedes G-Wagon (matte black)', tags: ['flashy', 'gas', 'city', 'modern'] },
+                { name: 'Restored Airstream Trailer (road trips)', tags: ['quirky', 'gas', 'adventure', 'classic'] },
+                { name: 'Classic Jeep Wrangler (topless)', tags: ['practical', 'gas', 'adventure', 'classic'] },
+                { name: 'Tesla Cybertruck', tags: ['quirky', 'electric', 'adventure', 'modern'] },
+                { name: 'Classic Mini Cooper (British racing green)', tags: ['quirky', 'vintage', 'city', 'classic'] },
+                { name: 'Classic VW Beetle (sunshine yellow)', tags: ['quirky', 'vintage', 'city', 'classic'] },
+                { name: 'Classic Cadillac Eldorado (pink)', tags: ['flashy', 'vintage', 'city', 'classic'] },
+                { name: 'Classic Woody Wagon (surf boards)', tags: ['quirky', 'vintage', 'adventure', 'classic'] },
+                { name: 'Restored Chevy El Camino', tags: ['quirky', 'vintage', 'city', 'classic'] },
+                { name: 'Restored Volkswagen Thing', tags: ['quirky', 'vintage', 'adventure', 'classic'] },
+                { name: 'Converted School Bus (tiny home)', tags: ['quirky', 'gas', 'adventure', 'quirky'] },
+                { name: 'Golf Cart (luxury Malibu)', tags: ['quirky', 'electric', 'city', 'quirky'] },
+                { name: 'Vintage Fire Truck (restored)', tags: ['quirky', 'vintage', 'city', 'quirky'] }
+            ],
+            vacations: [
+                { name: 'Barcelona (beach + architecture)', tags: ['cultural', 'popular', 'mix'] },
+                { name: 'Tokyo (neon + tradition)', tags: ['cultural', 'popular', 'city'] },
+                { name: 'Bali (jungle meets ocean)', tags: ['relaxation', 'popular', 'nature'] },
+                { name: 'Iceland (northern lights + hot springs)', tags: ['adventure', 'popular', 'nature'] },
+                { name: 'Santorini (white cliffs + blue domes)', tags: ['relaxation', 'popular', 'mix'] },
+                { name: 'New Zealand (LOTR landscapes)', tags: ['adventure', 'off-grid', 'nature'] },
+                { name: 'Safari in Tanzania (great migration)', tags: ['adventure', 'off-grid', 'nature'] },
+                { name: 'Maldives (overwater bungalows)', tags: ['relaxation', 'popular', 'nature'] },
+                { name: 'Patagonia (mountains touch clouds)', tags: ['adventure', 'off-grid', 'nature'] },
+                { name: 'Kyoto in cherry blossom season', tags: ['cultural', 'popular', 'city'] },
+                { name: 'Morocco (souks + Sahara)', tags: ['cultural', 'popular', 'mix'] },
+                { name: 'Norway (fjords + midnight sun)', tags: ['adventure', 'off-grid', 'nature'] },
+                { name: 'Peru (Machu Picchu + mystery)', tags: ['cultural', 'popular', 'mix'] },
+                { name: 'Scotland (castles + highlands)', tags: ['cultural', 'off-grid', 'nature'] },
+                { name: 'Thailand (temples + island hopping)', tags: ['cultural', 'popular', 'mix'] },
+                { name: 'Costa Rica (zip lines + sloths)', tags: ['adventure', 'popular', 'nature'] },
+                { name: 'Croatia (Adriatic + GOT sites)', tags: ['cultural', 'popular', 'mix'] },
+                { name: 'Portugal (surf + pastel de nata)', tags: ['relaxation', 'popular', 'mix'] },
+                { name: 'Jordan (Petra + Wadi Rum)', tags: ['cultural', 'off-grid', 'nature'] },
+                { name: 'Greece (island hopping Cyclades)', tags: ['relaxation', 'popular', 'mix'] },
+                { name: 'Alaska (glaciers + wildlife)', tags: ['adventure', 'off-grid', 'nature'] },
+                { name: 'Bolivia (salt flats mirror sky)', tags: ['adventure', 'off-grid', 'nature'] },
+                { name: 'Finland (northern lights + saunas)', tags: ['adventure', 'off-grid', 'nature'] },
+                { name: 'Antarctica (penguins + pure adventure)', tags: ['adventure', 'off-grid', 'nature'] },
+                { name: 'Bhutan (happiness + Himalayas)', tags: ['cultural', 'off-grid', 'nature'] },
+                { name: 'Galapagos (Darwin\'s playground)', tags: ['adventure', 'off-grid', 'nature'] },
+                { name: 'Mongolia (nomads + endless steppe)', tags: ['adventure', 'off-grid', 'nature'] }
+            ],
+            pets: [
+                { name: 'Golden Retriever named Pancake', tags: ['high', 'needy', 'large', 'playful'] },
+                { name: 'Maine Coon cat named Professor', tags: ['medium', 'independent', 'large', 'chill'] },
+                { name: 'Rescue Husky with one blue eye', tags: ['high', 'needy', 'large', 'playful'] },
+                { name: 'Parrot who tells dad jokes', tags: ['medium', 'independent', 'small', 'quirky'] },
+                { name: 'Beagle mix named Biscuit', tags: ['medium', 'needy', 'medium', 'playful'] },
+                { name: 'Orange tabby who thinks he\'s a dog', tags: ['medium', 'independent', 'medium', 'quirky'] },
+                { name: 'French Bulldog named Butter', tags: ['medium', 'needy', 'small', 'playful'] },
+                { name: 'Ragdoll cat named Cloud', tags: ['low', 'independent', 'large', 'chill'] },
+                { name: 'Corgi named Nugget', tags: ['high', 'needy', 'small', 'playful'] },
+                { name: 'Black cat named Midnight', tags: ['medium', 'independent', 'medium', 'chill'] },
+                { name: 'Labradoodle named Waffles', tags: ['high', 'needy', 'large', 'playful'] },
+                { name: 'Siamese cat named Miso', tags: ['medium', 'independent', 'medium', 'playful'] },
+                { name: 'Basset Hound named Elvis', tags: ['low', 'needy', 'medium', 'chill'] },
+                { name: 'Shiba Inu named Mochi', tags: ['medium', 'independent', 'small', 'quirky'] },
+                { name: 'Pomeranian named Teddy', tags: ['high', 'needy', 'small', 'playful'] },
+                { name: 'Great Dane named Moose (ironic)', tags: ['medium', 'needy', 'large', 'chill'] },
+                { name: 'Dachshund named Pretzel', tags: ['medium', 'needy', 'small', 'quirky'] },
+                { name: 'Sphynx cat named Yoda', tags: ['high', 'needy', 'small', 'quirky'] },
+                { name: 'Samoyed named Marshmallow', tags: ['high', 'needy', 'large', 'playful'] },
+                { name: 'Mutt from shelter who chose you', tags: ['medium', 'needy', 'medium', 'quirky'] },
+                { name: 'Mini pig named Truffle', tags: ['medium', 'needy', 'small', 'quirky'] },
+                { name: 'Hedgehog named Sonic', tags: ['low', 'independent', 'small', 'quirky'] },
+                { name: 'Peacock who lives in your garden', tags: ['low', 'independent', 'large', 'quirky'] },
+                { name: 'Tortoise older than grandparents', tags: ['low', 'independent', 'small', 'quirky'] },
+                { name: 'Two ducks named Quack and Cheese', tags: ['medium', 'needy', 'small', 'quirky'] }
+            ],
+            vibes: [
+                'Your future is written in stardust and good coffee',
+                'Adventure calls, and you picked up on the first ring',
+                'You\'re about to live someone else\'s Pinterest board',
+                'The universe said "go big or go cosmic"',
+                'Your fortune cookie just upgraded to fortune mansion',
+                'Main character energy, supporting character budget (kidding, you\'re loaded)',
+                'Living proof that manifestation works',
+                'Your life will be the aesthetic everyone copies',
+                'Plot twist: you\'re the rom-com protagonist now',
+                'Your vision board is about to request overtime',
+                'The stars aligned and they brought receipts',
+                'This is what happens when you stop playing small',
+                'Your future self is already proud of you',
+                'Manifesting at this level should come with a warning label',
+                'The universe took notes on your daydreams',
+                'This fortune came with a side of audacity',
+                'Your aesthetic is about to have an aesthetic',
+                'Living the life people write novels about',
+                'The cosmos said "make it extra"',
+                'Your energy is too expensive to be subtle',
+                'This is the timeline where you chose yourself',
+                'The stars did their homework on you',
+                'Your vibe is officially a whole mood',
+                'The universe is your hype person now',
+                'This fortune requires a soundtrack',
+                'Your life is about to trend',
+                'The cosmos is playing favorites (it\'s you)',
+                'Main character energy meets unlimited budget',
+                'Your manifestation just went viral',
+                'This is what dreaming in HD looks like'
+            ],
+            cosmicSymbols: [
+                { emoji: '⭐', name: 'Stardust' },
+                { emoji: '🌙', name: 'Moonbeam' },
+                { emoji: '☀️', name: 'Solar Flare' },
+                { emoji: '🌊', name: 'Cosmic Wave' },
+                { emoji: '🔥', name: 'Phoenix Fire' },
+                { emoji: '💎', name: 'Crystal Energy' },
+                { emoji: '🌸', name: 'Cherry Blossom' },
+                { emoji: '⚡', name: 'Lightning Strike' },
+                { emoji: '🌈', name: 'Rainbow Path' },
+                { emoji: '🦋', name: 'Butterfly Effect' },
+                { emoji: '🌺', name: 'Tropical Breeze' },
+                { emoji: '✨', name: 'Sparkle Magic' }
+            ]
+        };
+
+        // Theme detection and interpretations
+        const THEMES = {
+            'Adventure Seeker': {
+                triggers: ['adventurous', 'off-grid', 'risky'],
+                fire: 'Your fire energy is screaming for new territory. This fortune isn\'t suggesting adventure—it\'s demanding it. What bold move have you been putting off?',
+                earth: 'Even earth signs need to wander. This fortune appeared because you\'re ready to build something new in unfamiliar territory.',
+                air: 'Your mind is hungry for new input. This fortune appeared because routine is dimming your spark. Feed your curiosity.',
+                water: 'Your intuition has been pulling you somewhere new. This fortune appeared because you\'re finally ready to trust that inner compass.',
+                questions: {
+                    main: 'If fear wasn\'t a factor, which piece of this fortune would you pursue tomorrow?',
+                    action: 'What\'s one micro-adventure you could take this week?',
+                    deep: 'Where in your life are you playing it safe when you\'re built for bold?'
+                }
+            },
+            'Creative Sanctuary': {
+                triggers: ['creative', 'quirky', 'private'],
+                fire: 'Even fire needs fuel. This fortune appeared because you\'re ready to channel your intensity into something lasting.',
+                earth: 'Earth signs make the best creators because you finish things. This fortune is calling you to build something beautiful.',
+                air: 'Your ideas need space to breathe. This fortune showed up because you\'re ready to create without constant input.',
+                water: 'Water signs create from emotional depth. This fortune appeared because you\'re ready to stop hiding your sensitivity and start using it.',
+                questions: {
+                    main: 'What creative project have you been putting off because it "doesn\'t make sense"?',
+                    action: 'Block 30 minutes this week for creating with no goal required',
+                    deep: 'What would you make if nobody ever had to see it?'
+                }
+            },
+            'Balanced Abundance': {
+                triggers: ['high-luxury', 'mid-luxury', 'stable', 'grounded'],
+                fire: 'Fire signs don\'t do mediocre. This fortune shows luxury that matches your energy—unapologetic and earned.',
+                earth: 'This is what happens when earth signs stop undervaluing themselves. Quality, stability, and beauty—you\'ve earned all of it.',
+                air: 'Intelligence is a luxury too. This fortune reminds you that investing in beauty and comfort isn\'t shallow—it\'s strategic.',
+                water: 'Water signs often undervalue material comfort. This fortune is reminding you that beauty and luxury can be healing, not shallow.',
+                questions: {
+                    main: 'Which aspect of this fortune represents the quality of life you actually want?',
+                    action: 'Identify one small luxury you could add to your daily routine',
+                    deep: 'Where are you settling for "good enough" when you deserve great?'
+                }
+            },
+            'Social Butterfly': {
+                triggers: ['social', 'urban', 'collaborative', 'popular'],
+                fire: 'Fire signs thrive when others witness their light. This fortune celebrates connection and community.',
+                earth: 'Even grounded earth needs community. This fortune shows a life built around meaningful connections.',
+                air: 'Air signs thrive in connection. This fortune shows a life built around people, ideas, and community—exactly where you belong.',
+                water: 'Water signs feel everything, including the energy of others. This fortune appeared because you\'re ready for nourishing connections.',
+                questions: {
+                    main: 'When was the last time you felt energized by a conversation or community?',
+                    action: 'Reach out to someone whose mind you admire and suggest coffee',
+                    deep: 'Are you getting enough intellectual stimulation, or just social noise?'
+                }
+            },
+            'Nature Healer': {
+                triggers: ['nature', 'remote', 'relaxation', 'chill'],
+                fire: 'Even fire needs to rest. This fortune is giving you permission to recharge in silence and nature.',
+                earth: 'You\'re being pulled back to your element. This fortune appeared because you need to remember what "grounded" actually feels like.',
+                air: 'Air can\'t think clearly in chaos. This fortune is calling you back to space, trees, and silence.',
+                water: 'You feel everything, which is exhausting. This fortune is the universe giving you permission to retreat and recharge.',
+                questions: {
+                    main: 'How much time do you spend outside vs. staring at screens?',
+                    action: 'Take one meal outside this week, no phone allowed',
+                    deep: 'What would change if you prioritized peace over productivity?'
+                }
+            }
+        };
+
+        // Cosmic guidance by symbol
+        const COSMIC_GUIDANCE = {
+            'Stardust': 'Your energy is pulling you toward something bigger than routine. This fortune isn\'t random—it\'s showing you what happens when you stop playing small.',
+            'Moonbeam': 'You\'ve been moving fast. This fortune is a reminder to slow down and choose luxury over hustle. Your next chapter needs spaciousness.',
+            'Solar Flare': 'Bold moves ahead. This fortune appeared because you\'re ready to burn brighter. No more dimming yourself for comfort.',
+            'Cosmic Wave': 'Go with the flow, but make it luxurious. This fortune is calling you toward ease and adventure.',
+            'Phoenix Fire': 'Transformation energy is strong. This fortune showed up because you\'re shedding an old version of yourself.',
+            'Crystal Energy': 'Clarity is coming. This fortune reflects where you\'re headed once the fog clears. Trust your intuition.',
+            'Cherry Blossom': 'Beauty and impermanence. This fortune is reminding you that life is short—might as well live it beautifully.',
+            'Lightning Strike': 'Fast changes ahead. This fortune appeared because your life is about to accelerate. Buckle up, but also? Enjoy the ride.',
+            'Rainbow Path': 'Your path is anything but straight—and that\'s the magic. This fortune celebrates your unconventional journey.',
+            'Butterfly Effect': 'Small choices, big impact. This fortune is showing you the ripple effect of trusting yourself.',
+            'Tropical Breeze': 'Slow down and breathe. This fortune appeared to remind you that paradise isn\'t just a destination—it\'s a vibe.',
+            'Sparkle Magic': 'Pure manifestation energy. This fortune showed up because you\'re finally believing you deserve it.'
+        };
+
+        function CosmicMASH() {
+            const [page, setPage] = useState('game');
+            const [stage, setStage] = useState('input');
+            const [luckyNumber, setLuckyNumber] = useState('');
+            const [inputMode, setInputMode] = useState(''); // 'birthday' or 'element'
+            const [birthMonth, setBirthMonth] = useState('');
+            const [birthDay, setBirthDay] = useState('');
+            const [selectedElement, setSelectedElement] = useState('');
+            const [wheelValue, setWheelValue] = useState(0);
+            const [cosmicSymbol, setCosmicSymbol] = useState('');
+            const [fortune, setFortune] = useState(null);
+            const [isSpinning, setIsSpinning] = useState(false);
+            const [showSparkles, setShowSparkles] = useState(false);
+            const [zodiacInfo, setZodiacInfo] = useState(null);
+
+            const months = [
+                { value: 1, name: 'January' }, { value: 2, name: 'February' }, { value: 3, name: 'March' },
+                { value: 4, name: 'April' }, { value: 5, name: 'May' }, { value: 6, name: 'June' },
+                { value: 7, name: 'July' }, { value: 8, name: 'August' }, { value: 9, name: 'September' },
+                { value: 10, name: 'October' }, { value: 11, name: 'November' }, { value: 12, name: 'December' }
+            ];
+
+            const days = Array.from({ length: 31 }, (_, i) => i + 1);
+
+            const elements = [
+                { name: 'fire', emoji: '🔥', label: 'Fire' },
+                { name: 'earth', emoji: '🌍', label: 'Earth' },
+                { name: 'air', emoji: '💨', label: 'Air' },
+                { name: 'water', emoji: '💧', label: 'Water' }
+            ];
+
+            const elementToUse = zodiacInfo ? zodiacInfo.element : selectedElement || 'default';
+            const colorScheme = colorSchemes[elementToUse];
+
+            const spinWheel = () => {
+                setIsSpinning(true);
+                setShowSparkles(true);
+                let spins = 0;
+                const spinInterval = setInterval(() => {
+                    const randomIndex = Math.floor(Math.random() * FORTUNE_DATA.cosmicSymbols.length);
+                    setWheelValue(randomIndex);
+                    spins++;
+                    if (spins > 20) {
+                        clearInterval(spinInterval);
+                        const finalIndex = Math.floor(Math.random() * FORTUNE_DATA.cosmicSymbols.length);
+                        setWheelValue(finalIndex);
+                        setCosmicSymbol(FORTUNE_DATA.cosmicSymbols[finalIndex].name);
+                        setIsSpinning(false);
+                        setTimeout(() => setShowSparkles(false), 2000);
+                    }
+                }, 100);
+            };
+
+            const detectTheme = (fortuneItems) => {
+                const allTags = [
+                    ...fortuneItems.house.tags,
+                    ...fortuneItems.job.tags,
+                    ...fortuneItems.car.tags,
+                    ...fortuneItems.vacation.tags,
+                    ...fortuneItems.pet.tags
+                ];
+
+                const tagCounts = {};
+                allTags.forEach(tag => {
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                });
+
+                for (const [themeName, themeData] of Object.entries(THEMES)) {
+                    const matchCount = themeData.triggers.reduce((sum, trigger) => 
+                        sum + (tagCounts[trigger] || 0), 0);
+                    if (matchCount >= 3) {
+                        return themeName;
+                    }
+                }
+
+                return 'Balanced Abundance';
+            };
+
+            const generateFortune = () => {
+                const hasValidInput = luckyNumber && cosmicSymbol && 
+                    ((inputMode === 'birthday' && birthMonth && birthDay) || 
+                     (inputMode === 'element' && selectedElement));
+
+                if (!hasValidInput) return;
+                
+                setStage('processing');
+                
+                let element = selectedElement;
+                let zodiac = null;
+
+                if (inputMode === 'birthday' && birthMonth && birthDay) {
+                    zodiac = getZodiacSign(parseInt(birthMonth), parseInt(birthDay));
+                    element = zodiac.element;
+                    setZodiacInfo(zodiac);
+                }
+                
+                setTimeout(() => {
+                    const selectedFortune = {
+                        house: FORTUNE_DATA.houses[Math.floor(Math.random() * FORTUNE_DATA.houses.length)],
+                        job: FORTUNE_DATA.jobs[Math.floor(Math.random() * FORTUNE_DATA.jobs.length)],
+                        car: FORTUNE_DATA.cars[Math.floor(Math.random() * FORTUNE_DATA.cars.length)],
+                        vacation: FORTUNE_DATA.vacations[Math.floor(Math.random() * FORTUNE_DATA.vacations.length)],
+                        pet: FORTUNE_DATA.pets[Math.floor(Math.random() * FORTUNE_DATA.pets.length)],
+                        vibe: FORTUNE_DATA.vibes[Math.floor(Math.random() * FORTUNE_DATA.vibes.length)],
+                        cosmicGuidance: COSMIC_GUIDANCE[cosmicSymbol],
+                        symbol: cosmicSymbol
+                    };
+
+                    const theme = detectTheme(selectedFortune);
+                    const themeData = THEMES[theme];
+                    const interpretation = themeData[element];
+
+                    setFortune({
+                        ...selectedFortune,
+                        theme,
+                        interpretation,
+                        questions: themeData.questions,
+                        zodiacSign: zodiac?.sign,
+                        element: element,
+                        hasZodiac: !!zodiac
+                    });
+                    
+                    setStage('results');
+                    
+                    // Confetti on reveal
+                    setTimeout(() => {
+                        confetti({
+                            particleCount: 100,
+                            spread: 70,
+                            origin: { y: 0.6 }
+                        });
+                    }, 300);
+                }, 3000);
+            };
+
+            const reset = () => {
+                setStage('input');
+                setLuckyNumber('');
+                setInputMode('');
+                setBirthMonth('');
+                setBirthDay('');
+                setSelectedElement('');
+                setWheelValue(0);
+                setCosmicSymbol('');
+                setFortune(null);
+                setZodiacInfo(null);
+            };
+
+            const canGenerate = luckyNumber && cosmicSymbol && 
+                ((inputMode === 'birthday' && birthMonth && birthDay) || 
+                 (inputMode === 'element' && selectedElement));
+
+            const renderPage = () => {
+                if (page === 'about') {
+                    return (
+                        <div className="max-w-3xl mx-auto">
+                            <h1 className="text-4xl md:text-5xl font-bold mb-6">About Cosmic MASH</h1>
+                            <div className="bg-black/30 backdrop-blur-lg rounded-3xl p-6 md:p-8 space-y-4 text-base md:text-lg leading-relaxed">
+                                <p>
+                                    Cosmic MASH is inspired by the fortune-telling game we all played in middle school 
+                                    (you know the one - Mansion, Apartment, Shack, House). But instead of just random answers, 
+                                    this version uses astrology, cosmic symbols, and pattern recognition to give you fortunes 
+                                    that actually resonate.
+                                </p>
+                                <p>
+                                    It's playful, insightful, and weirdly accurate at showing you what you're craving right now.
+                                </p>
+                                <p>
+                                    Each fortune is personalized based on your zodiac sign and birth chart energy, then interpreted 
+                                    through themes that emerge from your fortune combination. The reflection questions are designed 
+                                    to help you bridge the gap between aspiration and action.
+                                </p>
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (page === 'privacy') {
+                    return (
+                        <div className="max-w-3xl mx-auto">
+                            <h1 className="text-4xl md:text-5xl font-bold mb-6">Privacy Policy</h1>
+                            <div className="bg-black/30 backdrop-blur-lg rounded-3xl p-6 md:p-8 space-y-4 text-base md:text-lg leading-relaxed">
+                                <p><strong>Last updated:</strong> November 2025</p>
+                                <h2 className="text-2xl font-bold mt-6">Data Collection</h2>
+                                <p>
+                                    Cosmic MASH does not collect, store, or share any personal information. Your birthday 
+                                    and fortune selections are processed entirely in your browser and are not sent to any server.
+                                </p>
+                                <h2 className="text-2xl font-bold mt-6">Cookies</h2>
+                                <p>
+                                    This website does not use cookies for tracking purposes.
+                                </p>
+                                <h2 className="text-2xl font-bold mt-6">Analytics</h2>
+                                <p>
+                                    We may use privacy-focused analytics to understand site usage, but no personally 
+                                    identifiable information is collected.
+                                </p>
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (page === 'terms') {
+                    return (
+                        <div className="max-w-3xl mx-auto">
+                            <h1 className="text-4xl md:text-5xl font-bold mb-6">Terms of Service</h1>
+                            <div className="bg-black/30 backdrop-blur-lg rounded-3xl p-6 md:p-8 space-y-4 text-base md:text-lg leading-relaxed">
+                                <p><strong>Last updated:</strong> November 2025</p>
+                                <h2 className="text-2xl font-bold mt-6">Use of Service</h2>
+                                <p>
+                                    Cosmic MASH is provided for entertainment purposes only. Fortunes generated are not 
+                                    professional advice and should not be used as a basis for important life decisions.
+                                </p>
+                                <h2 className="text-2xl font-bold mt-6">Disclaimer</h2>
+                                <p>
+                                    While we use astrological principles and pattern recognition, fortunes are randomly 
+                                    generated and should be taken with cosmic humor. We make no guarantees about accuracy 
+                                    or outcomes.
+                                </p>
+                            </div>
+                        </div>
+                    );
+                }
+
+                // Game page
+                return (
+                    <>
+                        <div className="text-center mb-8 md:mb-12">
+                            <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 text-transparent bg-clip-text">
+                                Cosmic MASH ✨
+                            </h1>
+                            <p className="text-lg md:text-2xl text-purple-200">
+                                Your fortune-telling game powered by the universe
+                            </p>
+                            <p className="text-base md:text-xl text-purple-300 mt-4 max-w-3xl mx-auto px-4">
+                                Spin the cosmic wheel, pick your numbers, and reveal a personalized fortune based on your zodiac energy. 
+                                Get your dream house, career, vacation, and more—plus real insights on what it all means for your actual life right now.
+                            </p>
+                        </div>
+
+                        {stage === 'input' && (
+                            <div className={`bg-black/30 backdrop-blur-lg rounded-3xl p-6 md:p-12 border-2 ${colorScheme.border} shadow-2xl`}>
+                                <div className="space-y-6 md:space-y-8">
+                                    {/* Lucky Number First */}
+                                    <div className="space-y-3">
+                                        <label className="block text-lg md:text-xl text-purple-200">Lucky Number</label>
+                                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 md:gap-3">
+                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
+                                                <button
+                                                    key={num}
+                                                    onClick={() => setLuckyNumber(num.toString())}
+                                                    className={`p-3 md:p-4 rounded-xl text-lg md:text-xl font-bold transition-all touch-manipulation ${
+                                                        luckyNumber === num.toString()
+                                                            ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white scale-110 shadow-xl'
+                                                            : 'bg-purple-900/50 border-2 border-purple-400/50 text-purple-200 hover:border-pink-400 active:scale-95'
+                                                    }`}
+                                                >
+                                                    {num}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Birthday OR Element Choice */}
+                                    <div className="space-y-3">
+                                        <label className="block text-lg md:text-xl text-purple-200 mb-2">
+                                            Want deeper insights? Enter your birthday for zodiac-personalized fortunes — or pick your element energy for instant cosmic vibes.
+                                        </label>
+                                        
+                                        {!inputMode && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <button
+                                                    onClick={() => setInputMode('birthday')}
+                                                    className="p-4 md:p-6 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg md:text-xl font-bold hover:scale-105 active:scale-95 transition-transform touch-manipulation"
+                                                >
+                                                    📅 Enter Birthday
+                                                </button>
+                                                <button
+                                                    onClick={() => setInputMode('element')}
+                                                    className="p-4 md:p-6 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg md:text-xl font-bold hover:scale-105 active:scale-95 transition-transform touch-manipulation"
+                                                >
+                                                    ✨ Choose Element
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {inputMode === 'birthday' && (
+                                            <div className="space-y-4">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm text-purple-200 mb-2">Month</label>
+                                                        <select
+                                                            value={birthMonth}
+                                                            onChange={(e) => setBirthMonth(e.target.value)}
+                                                            className="w-full p-3 md:p-4 rounded-xl bg-purple-900/50 border-2 border-purple-400/50 text-white text-base md:text-lg focus:outline-none focus:border-pink-400"
+                                                        >
+                                                            <option value="">Month</option>
+                                                            {months.map(month => (
+                                                                <option key={month.value} value={month.value}>{month.name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm text-purple-200 mb-2">Day</label>
+                                                        <select
+                                                            value={birthDay}
+                                                            onChange={(e) => setBirthDay(e.target.value)}
+                                                            className="w-full p-3 md:p-4 rounded-xl bg-purple-900/50 border-2 border-purple-400/50 text-white text-base md:text-lg focus:outline-none focus:border-pink-400"
+                                                        >
+                                                            <option value="">Day</option>
+                                                            {days.map(day => (
+                                                                <option key={day} value={day}>{day}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        setInputMode('');
+                                                        setBirthMonth('');
+                                                        setBirthDay('');
+                                                    }}
+                                                    className="text-purple-300 text-sm hover:text-white"
+                                                >
+                                                    ← Choose element instead
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {inputMode === 'element' && (
+                                            <div className="space-y-4">
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                    {elements.map(el => (
+                                                        <button
+                                                            key={el.name}
+                                                            onClick={() => setSelectedElement(el.name)}
+                                                            className={`p-4 md:p-6 rounded-xl text-lg md:text-xl font-bold transition-all touch-manipulation ${
+                                                                selectedElement === el.name
+                                                                    ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white scale-110 shadow-xl'
+                                                                    : 'bg-purple-900/50 border-2 border-purple-400/50 text-purple-200 hover:border-pink-400 active:scale-95'
+                                                            }`}
+                                                        >
+                                                            <div className="text-3xl mb-2">{el.emoji}</div>
+                                                            <div className="text-sm md:text-base">{el.label}</div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        setInputMode('');
+                                                        setSelectedElement('');
+                                                    }}
+                                                    className="text-purple-300 text-sm hover:text-white"
+                                                >
+                                                    ← Enter birthday instead
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Wheel Spin */}
+                                    <div className="space-y-3">
+                                        <label className="block text-lg md:text-xl text-purple-200">Spin the Cosmic Wheel</label>
+                                        <div className="relative flex flex-col items-center">
+                                            <div className="relative">
+                                                <button
+                                                    onClick={spinWheel}
+                                                    disabled={isSpinning}
+                                                    className={`w-40 h-40 md:w-48 md:h-48 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-pink-400 to-purple-400 text-white text-5xl md:text-6xl font-bold shadow-2xl transition-transform touch-manipulation ${
+                                                        isSpinning ? 'animate-spin' : 'hover:scale-105 active:scale-95'
+                                                    } ${!isSpinning && cosmicSymbol ? 'glow-pulse' : ''}`}
+                                                >
+                                                    {FORTUNE_DATA.cosmicSymbols[wheelValue] ? FORTUNE_DATA.cosmicSymbols[wheelValue].emoji : '✨'}
+                                                </button>
+                                                {showSparkles && (
+                                                    <>
+                                                        {[...Array(8)].map((_, i) => (
+                                                            <div
+                                                                key={i}
+                                                                className="sparkle"
+                                                                style={{
+                                                                    left: `${50 + 40 * Math.cos(i * Math.PI / 4)}%`,
+                                                                    top: `${50 + 40 * Math.sin(i * Math.PI / 4)}%`,
+                                                                    animationDelay: `${i * 0.1}s`
+                                                                }}
+                                                            />
+                                                        ))}
+                                                    </>
+                                                )}
+                                            </div>
+                                            {cosmicSymbol && !isSpinning && (
+                                                <div className="text-center mt-4 shimmer">
+                                                    <Star className="w-8 h-8 mx-auto text-yellow-300" />
+                                                    <p className="text-lg md:text-xl text-yellow-300 mt-2">Your cosmic energy: {cosmicSymbol}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={generateFortune}
+                                        disabled={!canGenerate}
+                                        className={`w-full p-5 md:p-6 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xl md:text-2xl font-bold transition-transform touch-manipulation shadow-2xl ${
+                                            canGenerate ? 'hover:scale-105 active:scale-95' : 'opacity-50 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        ✨ Reveal My Fortune ✨
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {stage === 'processing' && (
+                            <div className="text-center space-y-8 py-20">
+                                <div className="space-y-6">
+                                    <Moon className="w-20 h-20 md:w-24 md:h-24 mx-auto text-yellow-300 animate-bounce" />
+                                    <h2 className="text-3xl md:text-5xl font-bold text-yellow-300">The cosmos is calculating...</h2>
+                                    <div className="flex justify-center space-x-3 md:space-x-8 text-3xl md:text-4xl">
+                                        <div className="animate-pulse">M</div>
+                                        <div className="animate-pulse animation-delay-200">A</div>
+                                        <div className="animate-pulse animation-delay-400">S</div>
+                                        <div className="animate-pulse animation-delay-600">H</div>
+                                    </div>
+                                    <p className="text-lg md:text-2xl text-purple-200 animate-pulse">Aligning your stars...</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {stage === 'results' && fortune && (
+                            <div className="space-y-6 md:space-y-8">
+                                <div className="text-center space-y-4 fade-in-up">
+                                    <Sun className="w-12 h-12 md:w-16 md:h-16 mx-auto text-yellow-300" />
+                                    <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 text-transparent bg-clip-text">
+                                        Your Cosmic Fortune
+                                    </h2>
+                                    {fortune.hasZodiac && (
+                                        <p className="text-base md:text-lg text-purple-200">
+                                            {fortune.zodiacSign} ✨ {fortune.element.charAt(0).toUpperCase() + fortune.element.slice(1)} Sign
+                                        </p>
+                                    )}
+                                    <p className="text-lg md:text-2xl text-purple-200 italic px-4">{fortune.vibe}</p>
+                                </div>
+
+                                <div className={`bg-black/40 backdrop-blur-lg rounded-3xl p-6 md:p-8 space-y-6 border-2 ${colorScheme.border}`}>
+                                    <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                                        <div className={`bg-gradient-to-br ${colorScheme.card} p-4 md:p-6 rounded-2xl border ${colorScheme.border} fade-in-up delay-100`}>
+                                            <h3 className={`text-xl md:text-2xl font-bold ${colorScheme.accent} mb-3`}>🏡 Your Home</h3>
+                                            <p className="text-lg md:text-xl font-semibold">{fortune.house.name}</p>
+                                            <p className="text-base md:text-lg text-purple-200">{fortune.house.location}</p>
+                                            <p className="text-pink-300 font-bold text-base md:text-lg mt-2">{fortune.house.price}</p>
+                                            <p className="text-sm text-purple-200 mt-2 italic">{fortune.house.desc}</p>
+                                        </div>
+
+                                        <div className={`bg-gradient-to-br ${colorScheme.card} p-4 md:p-6 rounded-2xl border ${colorScheme.border} fade-in-up delay-200`}>
+                                            <h3 className={`text-xl md:text-2xl font-bold ${colorScheme.accent} mb-3`}>💼 Your Career</h3>
+                                            <p className="text-lg md:text-xl">{fortune.job.name}</p>
+                                        </div>
+
+                                        <div className={`bg-gradient-to-br ${colorScheme.card} p-4 md:p-6 rounded-2xl border ${colorScheme.border} fade-in-up delay-300`}>
+                                            <h3 className={`text-xl md:text-2xl font-bold ${colorScheme.accent} mb-3`}>🚗 Your Ride</h3>
+                                            <p className="text-lg md:text-xl">{fortune.car.name}</p>
+                                        </div>
+
+                                        <div className={`bg-gradient-to-br ${colorScheme.card} p-4 md:p-6 rounded-2xl border ${colorScheme.border} fade-in-up delay-400`}>
+                                            <h3 className={`text-xl md:text-2xl font-bold ${colorScheme.accent} mb-3`}>✈️ Dream Vacation</h3>
+                                            <p className="text-lg md:text-xl">{fortune.vacation.name}</p>
+                                        </div>
+
+                                        <div className={`bg-gradient-to-br ${colorScheme.card} p-4 md:p-6 rounded-2xl border ${colorScheme.border} md:col-span-2 fade-in-up delay-500`}>
+                                            <h3 className={`text-xl md:text-2xl font-bold ${colorScheme.accent} mb-3`}>🐾 Your Companion</h3>
+                                            <p className="text-lg md:text-xl">{fortune.pet.name}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className={`bg-gradient-to-r ${colorScheme.card} p-4 md:p-6 rounded-2xl border-2 border-yellow-400/50 mt-6 fade-in-up delay-600`}>
+                                        <h3 className="text-xl md:text-2xl font-bold text-yellow-300 mb-3 flex items-center gap-2">
+                                            <Sparkles className="w-5 h-5 md:w-6 md:h-6" />
+                                            Fortune Theme: {fortune.theme}
+                                        </h3>
+                                        <p className="text-base md:text-lg text-purple-100 leading-relaxed mb-4">{fortune.interpretation}</p>
+                                        <p className="text-base md:text-lg text-purple-100 leading-relaxed">{fortune.cosmicGuidance}</p>
+                                    </div>
+
+                                    <div className={`bg-gradient-to-r ${colorScheme.card} p-4 md:p-6 rounded-2xl border-2 ${colorScheme.border} mt-6`}>
+                                        <h3 className={`text-xl md:text-2xl font-bold ${colorScheme.accent} mb-4`}>
+                                            Reflection Questions
+                                        </h3>
+                                        <div className="space-y-4 text-sm md:text-base">
+                                            <div>
+                                                <p className="font-semibold text-purple-200">Main Question:</p>
+                                                <p className="text-purple-100">{fortune.questions.main}</p>
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-purple-200">Action Prompt:</p>
+                                                <p className="text-purple-100">{fortune.questions.action}</p>
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-purple-200">Deep Reflection:</p>
+                                                <p className="text-purple-100">{fortune.questions.deep}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                                        <button
+                                            onClick={reset}
+                                            className={`flex-1 p-4 rounded-xl bg-gradient-to-r ${colorScheme.button} text-white text-lg md:text-xl font-bold hover:scale-105 active:scale-95 transition-transform touch-manipulation`}
+                                        >
+                                            ✨ Try Again
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const shareText = `✨ My Cosmic MASH Fortune ✨\n\n🏡 ${fortune.house.name} in ${fortune.house.location}\n💼 ${fortune.job.name}\n🚗 ${fortune.car.name}\n✈️ ${fortune.vacation.name}\n🐾 ${fortune.pet.name}\n\n${fortune.vibe}\n\nGet your fortune at playcosmicmash.com`;
+                                                
+                                                if (navigator.share) {
+                                                    // Mobile: use native share
+                                                    navigator.share({
+                                                        title: 'My Cosmic MASH Fortune',
+                                                        text: shareText
+                                                    }).catch(() => {});
+                                                } else {
+                                                    // Desktop: copy to clipboard
+                                                    navigator.clipboard.writeText(shareText).then(() => {
+                                                        alert('Fortune copied to clipboard! 📋✨ Paste it anywhere to share.');
+                                                    }).catch(() => {
+                                                        alert('Screenshot this fortune and share your cosmic destiny! 🌟');
+                                                    });
+                                                }
+                                            }}
+                                            className="flex-1 p-4 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white text-lg md:text-xl font-bold hover:scale-105 active:scale-95 transition-transform touch-manipulation"
+                                        >
+                                            📸 Share Fortune
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                );
+            };
+
+            return (
+                <div className={`min-h-screen bg-gradient-to-br ${colorScheme.gradient} text-white p-4 md:p-8`}>
+                    <header className="max-w-6xl mx-auto mb-6 md:mb-8">
+                        <nav className="flex flex-wrap gap-3 md:gap-4 justify-center text-base md:text-lg">
+                            <button onClick={() => setPage('game')} className={`px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-white/10 active:bg-white/20 transition touch-manipulation ${page === 'game' ? 'bg-white/20' : ''}`}>
+                                Play Game
+                            </button>
+                            <button onClick={() => setPage('about')} className={`px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-white/10 active:bg-white/20 transition touch-manipulation ${page === 'about' ? 'bg-white/20' : ''}`}>
+                                About
+                            </button>
+                            <button onClick={() => setPage('privacy')} className={`px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-white/10 active:bg-white/20 transition touch-manipulation ${page === 'privacy' ? 'bg-white/20' : ''}`}>
+                                Privacy
+                            </button>
+                            <button onClick={() => setPage('terms')} className={`px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-white/10 active:bg-white/20 transition touch-manipulation ${page === 'terms' ? 'bg-white/20' : ''}`}>
+                                Terms
+                            </button>
+                        </nav>
+                    </header>
+
+                    <div className="max-w-4xl mx-auto">
+                        {renderPage()}
+                    </div>
+
+                    <footer className="max-w-6xl mx-auto mt-8 md:mt-12 text-center text-purple-300 text-xs md:text-sm">
+                        <p>Built by cosmic vibes and questionable algorithms ✨</p>
+                        <p className="mt-2">© 2025 Cosmic MASH. All rights reserved.</p>
+                    </footer>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<CosmicMASH />, document.getElementById('root'));
+    </script>
+</body>
+</html>
